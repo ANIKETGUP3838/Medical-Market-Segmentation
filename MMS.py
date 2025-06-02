@@ -118,36 +118,40 @@ if uploaded_file:
         X = df_ml.drop(columns=['Test Results'])
         y = df_ml['Test Results']
 
-        if not np.issubdtype(X.dtypes.values[0], np.number):
-            st.error("Non-numeric data found in input features. Please check preprocessing.")
-        else:
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        # Ensure all values are numeric and clean
+        X = X.apply(pd.to_numeric, errors='coerce')
+        combined = pd.concat([X, y], axis=1).dropna()
+        X = combined.drop(columns=['Test Results'])
+        y = combined['Test Results']
 
-            models = {
-                "Logistic Regression": LogisticRegression(max_iter=1000),
-                "KNN": KNeighborsClassifier(),
-                "Decision Tree": DecisionTreeClassifier(),
-                "Random Forest": RandomForestClassifier()
-            }
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-            results = {}
-            for name, model in models.items():
-                model.fit(X_train, y_train)
-                preds = model.predict(X_test)
-                acc = accuracy_score(y_test, preds)
-                cm = confusion_matrix(y_test, preds)
-                results[name] = acc
+        models = {
+            "Logistic Regression": LogisticRegression(max_iter=1000),
+            "KNN": KNeighborsClassifier(),
+            "Decision Tree": DecisionTreeClassifier(),
+            "Random Forest": RandomForestClassifier()
+        }
 
-                st.markdown(f"**{name}** - Accuracy: {acc:.3f}")
-                fig_cm, ax_cm = plt.subplots()
-                sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax_cm,
-                            xticklabels=['Abnormal', 'Inconclusive', 'Normal'],
-                            yticklabels=['Abnormal', 'Inconclusive', 'Normal'])
-                ax_cm.set_xlabel("Predicted")
-                ax_cm.set_ylabel("Actual")
-                st.pyplot(fig_cm)
+        results = {}
+        for name, model in models.items():
+            model.fit(X_train, y_train)
+            preds = model.predict(X_test)
+            acc = accuracy_score(y_test, preds)
+            cm = confusion_matrix(y_test, preds)
+            results[name] = acc
 
-            best_model = max(results, key=results.get)
-            st.success(f"Best performing model: {best_model} with accuracy {results[best_model]:.3f}")
+            st.markdown(f"**{name}** - Accuracy: {acc:.3f}")
+            fig_cm, ax_cm = plt.subplots()
+            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax_cm,
+                        xticklabels=['Abnormal', 'Inconclusive', 'Normal'],
+                        yticklabels=['Abnormal', 'Inconclusive', 'Normal'])
+            ax_cm.set_xlabel("Predicted")
+            ax_cm.set_ylabel("Actual")
+            st.pyplot(fig_cm)
+
+        best_model = max(results, key=results.get)
+        st.success(f"Best performing model: {best_model} with accuracy {results[best_model]:.3f}")
+
 else:
     st.info("Please upload a CSV file to get started.")
