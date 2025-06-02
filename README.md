@@ -27,12 +27,3 @@ A Streamlit web application for interactive **Exploratory Data Analysis (EDA)**,
 - Highlights the best-performing model
 
 ---
-
-## 📂 File Structure
-
-```bash
-📦 medical-market-segmentation
-┣ 📄 streamlit_medical_segmentation_app.py
-┣ 📄 README.md
-┣ 📄 requirements.txt
-┣ 📁 assets/            # (Optional) for images, logos, etc.
