@@ -2,6 +2,12 @@
 
 A Streamlit web application for interactive **Exploratory Data Analysis (EDA)**, **Unsupervised Clustering**, and **Machine Learning-based Test Result Prediction** using healthcare datasets.
 
+## 🚀 Live Demo
+
+👉 **Try the App Now:**  
+🔗 [Medical Market Segmentation Streamlit App](https://medical-market-segmentation-ff9uvi74rde62kjgi4knjg.streamlit.app/)
+
+
 ## 🔍 Features
 
 ### 📊 EDA & Clustering
