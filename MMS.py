@@ -107,43 +107,47 @@ if uploaded_file:
         st.markdown("This page builds and evaluates classification models to predict **Test Results**.")
 
         df_ml = df.copy()
+        df_ml = df_ml.drop(columns=['Name', 'Date of Admission', 'Discharge Date'], errors='ignore')
         df_ml['Test Results'] = df_ml['Test Results'].replace({'Normal': 1, 'Inconclusive': 0, 'Abnormal': 2})
-        df_ml.drop(columns=['Name', 'Date of Admission', 'Discharge Date'], errors='ignore', inplace=True)
+
+        df_ml.dropna(inplace=True)
 
         for col in df_ml.select_dtypes(include='object').columns:
-            le = LabelEncoder()
-            df_ml[col] = le.fit_transform(df_ml[col].astype(str))
+            df_ml[col] = LabelEncoder().fit_transform(df_ml[col].astype(str))
 
         X = df_ml.drop(columns=['Test Results'])
         y = df_ml['Test Results']
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        if not np.issubdtype(X.dtypes.values[0], np.number):
+            st.error("Non-numeric data found in input features. Please check preprocessing.")
+        else:
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        models = {
-            "Logistic Regression": LogisticRegression(),
-            "KNN": KNeighborsClassifier(),
-            "Decision Tree": DecisionTreeClassifier(),
-            "Random Forest": RandomForestClassifier()
-        }
+            models = {
+                "Logistic Regression": LogisticRegression(max_iter=1000),
+                "KNN": KNeighborsClassifier(),
+                "Decision Tree": DecisionTreeClassifier(),
+                "Random Forest": RandomForestClassifier()
+            }
 
-        results = {}
-        for name, model in models.items():
-            model.fit(X_train, y_train)
-            preds = model.predict(X_test)
-            acc = accuracy_score(y_test, preds)
-            cm = confusion_matrix(y_test, preds)
-            results[name] = acc
+            results = {}
+            for name, model in models.items():
+                model.fit(X_train, y_train)
+                preds = model.predict(X_test)
+                acc = accuracy_score(y_test, preds)
+                cm = confusion_matrix(y_test, preds)
+                results[name] = acc
 
-            st.markdown(f"**{name}** - Accuracy: {acc:.3f}")
-            fig_cm, ax_cm = plt.subplots()
-            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax_cm,
-                        xticklabels=['Abnormal', 'Inconclusive', 'Normal'],
-                        yticklabels=['Abnormal', 'Inconclusive', 'Normal'])
-            ax_cm.set_xlabel("Predicted")
-            ax_cm.set_ylabel("Actual")
-            st.pyplot(fig_cm)
+                st.markdown(f"**{name}** - Accuracy: {acc:.3f}")
+                fig_cm, ax_cm = plt.subplots()
+                sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax_cm,
+                            xticklabels=['Abnormal', 'Inconclusive', 'Normal'],
+                            yticklabels=['Abnormal', 'Inconclusive', 'Normal'])
+                ax_cm.set_xlabel("Predicted")
+                ax_cm.set_ylabel("Actual")
+                st.pyplot(fig_cm)
 
-        best_model = max(results, key=results.get)
-        st.success(f"Best performing model: {best_model} with accuracy {results[best_model]:.3f}")
+            best_model = max(results, key=results.get)
+            st.success(f"Best performing model: {best_model} with accuracy {results[best_model]:.3f}")
 else:
     st.info("Please upload a CSV file to get started.")
