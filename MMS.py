@@ -114,45 +114,49 @@ if uploaded_file:
     elif page == "ML Model Predictions":
         st.title("🧠 ML Model Predictions: Test Results Classification")
         st.markdown("This page builds and evaluates classification models to predict **Test Results**.")
-
+    
         df_ml = df.copy()
         df_ml.drop(columns=['Name', 'Date of Admission', 'Discharge Date'], errors='ignore', inplace=True)
+    
+        # Map target labels to numeric
         df_ml['Test Results'] = df_ml['Test Results'].replace({'Normal': 1, 'Inconclusive': 0, 'Abnormal': 2})
-
-        df_ml.dropna(inplace=True)
-
+    
+        # Drop rows with missing target
+        df_ml.dropna(subset=['Test Results'], inplace=True)
+    
+        # Encode categorical features
         for col in df_ml.select_dtypes(include='object').columns:
             df_ml[col] = LabelEncoder().fit_transform(df_ml[col].astype(str))
-
+    
         X = df_ml.drop(columns=['Test Results'])
         y = df_ml['Test Results']
-        
+    
+        # Convert to numeric and drop rows with any NaNs
         X = X.apply(pd.to_numeric, errors='coerce')
         combined = pd.concat([X, y], axis=1).dropna()
-        
+    
+        if combined.empty:
+            st.error("No data available after preprocessing. Possibly due to missing or non-numeric values.")
+            st.stop()
+    
         X = combined.drop(columns=['Test Results'])
         y = combined['Test Results']
-        
-        if X.empty or y.empty:
-            st.error("The dataset is empty after preprocessing. Please check the uploaded file or preprocessing steps.")
-            st.stop()
-        
+    
         st.write("Preprocessed features shape:", X.shape)
         st.write("Preprocessed target shape:", y.shape)
-        
+    
         # 70% train, 30% test split
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.3, random_state=42
         )
-
-
+    
         models = {
             "Logistic Regression": LogisticRegression(max_iter=1000),
             "KNN": KNeighborsClassifier(),
             "Decision Tree": DecisionTreeClassifier(),
             "Random Forest": RandomForestClassifier()
         }
-
+    
         results = {}
         for name, model in models.items():
             model.fit(X_train, y_train)
@@ -160,7 +164,7 @@ if uploaded_file:
             acc = accuracy_score(y_test, preds)
             cm = confusion_matrix(y_test, preds)
             results[name] = acc
-
+    
             st.markdown(f"**{name}** - Accuracy: {acc:.3f}")
             fig_cm, ax_cm = plt.subplots()
             sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax_cm,
@@ -169,9 +173,10 @@ if uploaded_file:
             ax_cm.set_xlabel("Predicted")
             ax_cm.set_ylabel("Actual")
             st.pyplot(fig_cm)
-
+    
         best_model = max(results, key=results.get)
         st.success(f"Best performing model: {best_model} with accuracy {results[best_model]:.3f}")
+
 
 else:
     st.info("Please upload a CSV file to get started.")
