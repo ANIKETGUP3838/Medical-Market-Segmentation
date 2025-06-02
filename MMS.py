@@ -123,34 +123,29 @@ if uploaded_file:
         df_ml['Test Results'] = df_ml['Test Results'].replace({'Normal': 1, 'Inconclusive': 0, 'Abnormal': 2})
     
         # Drop rows with missing target
-        df_ml.dropna(subset=['Test Results'], inplace=True)
-    
-        # Encode categorical features
-        for col in df_ml.select_dtypes(include='object').columns:
-            df_ml[col] = LabelEncoder().fit_transform(df_ml[col].astype(str))
-    
         X = df_ml.drop(columns=['Test Results'])
         y = df_ml['Test Results']
         
         # Convert to numeric with coercion
         X_numeric = X.apply(pd.to_numeric, errors='coerce')
         
-        # Impute missing numeric values
+        # Select columns with at least one non-NaN value
+        valid_cols = [col for col in X_numeric.columns if X_numeric[col].notna().any()]
+        X_valid = X_numeric[valid_cols]
+        
         imputer = SimpleImputer(strategy='median')
-        X_imputed_array = imputer.fit_transform(X_numeric)
+        X_imputed_array = imputer.fit_transform(X_valid)
         
-        # Build DataFrame from imputed array
-        X_imputed = pd.DataFrame(X_imputed_array, columns=X_numeric.columns)
-        X_imputed.index = X.index  # keep original index
+        X_imputed = pd.DataFrame(X_imputed_array, columns=valid_cols)
+        X_imputed.index = X_numeric.index  # preserve index
         
+        # Combine with target
         combined = pd.concat([X_imputed, y.reset_index(drop=True)], axis=1)
-
-    
-        # Check if data is empty after preprocessing
+        
         if combined.empty or combined.shape[0] == 0:
             st.error("No data available after preprocessing. Please check the uploaded file or preprocessing steps.")
             st.stop()
-    
+        
         X = combined.drop(columns=['Test Results'])
         y = combined['Test Results']
     
