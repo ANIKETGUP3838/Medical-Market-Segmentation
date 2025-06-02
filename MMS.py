@@ -131,7 +131,13 @@ if uploaded_file:
         combined = pd.concat([X, y], axis=1).dropna()
         X = combined.drop(columns=['Test Results'])
         y = combined['Test Results']
-
+        
+        # Add this check here:
+        if X.empty or y.empty:
+            st.error("The dataset is empty after preprocessing. Please check the uploaded file or preprocessing steps.")
+            st.stop()  # Stop running further code if no data
+        
+        # Now safe to split
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
         models = {
