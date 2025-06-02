@@ -196,4 +196,5 @@ if uploaded_file:
 
 
 else:
+    st.title("Medical Segmentation Dashboard")
     st.info("Please upload a CSV file to get started.")
