@@ -59,7 +59,7 @@ if uploaded_file:
         df_filtered = df[(df['Gender'].isin(selected_gender)) & (df['Age'].between(*selected_age))]
 
         st.subheader("Dataset Preview")
-        st.dataframe(data.head())
+        st.dataframe(df.head())
         
         st.subheader("1. Demographic & Billing Analysis")
         col1, col2 = st.columns(2)
