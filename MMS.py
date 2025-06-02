@@ -14,24 +14,25 @@ from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.decomposition import PCA
 import numpy as np
 
-# Set up Streamlit multi-page layout
+# Set up Streamlit layout
 st.set_page_config(page_title="Medical Segmentation Dashboard", layout="wide")
 
 @st.cache_data
 
 def load_data(uploaded_file):
     df = pd.read_csv(uploaded_file)
-    df['Gender'] = df['Gender'].str.strip().str.capitalize()
-    age_bins = [10, 20, 30, 40, 50, 60, 70, 80, 90]
-    age_labels = ['10–20', '20–30', '30–40', '40–50', '50–60', '60–70', '70–80', '80–90']
-    df['Age Group'] = pd.cut(df['Age'], bins=age_bins, labels=age_labels, right=False)
+    if 'Gender' in df.columns:
+        df['Gender'] = df['Gender'].str.strip().str.capitalize()
+    if 'Age' in df.columns:
+        age_bins = [10, 20, 30, 40, 50, 60, 70, 80, 90]
+        age_labels = ['10–20', '20–30', '30–40', '40–50', '50–60', '60–70', '70–80', '80–90']
+        df['Age Group'] = pd.cut(df['Age'], bins=age_bins, labels=age_labels, right=False)
     return df
 
 # Sidebar Navigation
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["EDA & Clustering", "ML Model Predictions"])
 
-# Upload file once for use across pages
 uploaded_file = st.sidebar.file_uploader("Upload your healthcare_dataset.csv", type="csv")
 
 if uploaded_file:
@@ -40,18 +41,21 @@ if uploaded_file:
     if page == "EDA & Clustering":
         st.title("🩺 Medical Segmentation: EDA & Clustering")
         st.sidebar.header("Filters")
-        selected_gender = st.sidebar.multiselect("Select Gender", options=df['Gender'].unique(), default=df['Gender'].unique())
+
+        selected_gender = st.sidebar.multiselect("Select Gender", options=df['Gender'].dropna().unique(), default=df['Gender'].dropna().unique())
         selected_age = st.sidebar.slider("Select Age Range", int(df['Age'].min()), int(df['Age'].max()), (30, 70))
 
         df_filtered = df[(df['Gender'].isin(selected_gender)) & (df['Age'].between(*selected_age))]
 
         st.subheader("1. Demographic & Billing Analysis")
         col1, col2 = st.columns(2)
+
         with col1:
             st.markdown("**Patient Count by Age Group and Gender**")
             fig1, ax1 = plt.subplots()
             sns.countplot(data=df_filtered, x='Age Group', hue='Gender', ax=ax1)
             st.pyplot(fig1)
+
         with col2:
             st.markdown("**Average Billing by Age Group and Gender**")
             fig2, ax2 = plt.subplots()
@@ -60,18 +64,21 @@ if uploaded_file:
 
         st.subheader("2. Admission Type & Conditions")
         col3, col4 = st.columns(2)
+
         with col3:
             st.markdown("**Admission Type by Gender**")
             fig3, ax3 = plt.subplots()
             sns.countplot(data=df_filtered, x='Admission Type', hue='Gender', ax=ax3)
             st.pyplot(fig3)
+
         with col4:
             st.markdown("**Top Medical Conditions by Gender**")
-            top_conditions = df_filtered['Medical Condition'].value_counts().nlargest(6).index
-            condition_df = df_filtered[df_filtered['Medical Condition'].isin(top_conditions)]
-            fig4, ax4 = plt.subplots()
-            sns.countplot(data=condition_df, y='Medical Condition', hue='Gender', ax=ax4)
-            st.pyplot(fig4)
+            if 'Medical Condition' in df_filtered.columns:
+                top_conditions = df_filtered['Medical Condition'].value_counts().nlargest(6).index
+                condition_df = df_filtered[df_filtered['Medical Condition'].isin(top_conditions)]
+                fig4, ax4 = plt.subplots()
+                sns.countplot(data=condition_df, y='Medical Condition', hue='Gender', ax=ax4)
+                st.pyplot(fig4)
 
         st.subheader("3. Unsupervised Segmentation (Clustering)")
         clustering_features = ['Age', 'Billing Amount']
@@ -86,8 +93,10 @@ if uploaded_file:
         X_pca = pca.fit_transform(X_scaled)
 
         from sklearn.cluster import KMeans
-        kmeans = KMeans(n_clusters=k, random_state=42)
+        kmeans = KMeans(n_clusters=k, random_state=42, n_init='auto')
         clusters = kmeans.fit_predict(X_pca)
+
+        df_filtered = df_filtered.copy()
         df_filtered['Cluster'] = clusters
         pca_df = pd.DataFrame(X_pca, columns=['PCA1', 'PCA2'])
         pca_df['Cluster'] = clusters
@@ -107,7 +116,7 @@ if uploaded_file:
         st.markdown("This page builds and evaluates classification models to predict **Test Results**.")
 
         df_ml = df.copy()
-        df_ml = df_ml.drop(columns=['Name', 'Date of Admission', 'Discharge Date'], errors='ignore')
+        df_ml.drop(columns=['Name', 'Date of Admission', 'Discharge Date'], errors='ignore', inplace=True)
         df_ml['Test Results'] = df_ml['Test Results'].replace({'Normal': 1, 'Inconclusive': 0, 'Abnormal': 2})
 
         df_ml.dropna(inplace=True)
@@ -118,7 +127,6 @@ if uploaded_file:
         X = df_ml.drop(columns=['Test Results'])
         y = df_ml['Test Results']
 
-        # Ensure all values are numeric and clean
         X = X.apply(pd.to_numeric, errors='coerce')
         combined = pd.concat([X, y], axis=1).dropna()
         X = combined.drop(columns=['Test Results'])
