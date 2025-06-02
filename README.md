@@ -47,3 +47,21 @@ A Streamlit web application for interactive **Exploratory Data Analysis (EDA)**,
 | Angela White   | Female | 48  | 4700.80        | Routine        | Diabetes          | Abnormal     | 2023-08-10        | 2023-08-15     |
 | Daniel Green   | Male   | 33  | 3600.30        | Emergency      | Asthma            | Normal       | 2023-09-12        | 2023-09-14     |
 | Sophie Turner  | Female | 38  | 3100.00        | Urgent         | Hypertension      | Normal       | 2023-10-01        | 2023-10-05     |
+
+## ⚙️ Tech Stack
+
+- **Python** – Core programming language  
+- **Streamlit** – UI and interaction  
+- **scikit-learn** – ML models and preprocessing  
+- **Pandas, Seaborn, Matplotlib** – Data analysis and visualization  
+
+---
+
+## 🙌 Acknowledgments
+
+- Built for medical data insights, patient segmentation, and diagnostic result classification  
+- Inspired by real-world healthcare analytics applications  
+---
+## 📬 Contact
+
+For questions or collaborations, feel free to reach out via [LinkedIn](https://www.linkedin.com/in/aniket-gupta-90b49725a/) or [Email](aniket25287@gmail.com).
