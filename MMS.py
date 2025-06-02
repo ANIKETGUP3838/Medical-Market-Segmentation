@@ -12,6 +12,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.decomposition import PCA
+from sklearn.impute import SimpleImputer
 import numpy as np
 
 # Set up Streamlit layout
@@ -131,12 +132,19 @@ if uploaded_file:
         X = df_ml.drop(columns=['Test Results'])
         y = df_ml['Test Results']
     
-        # Convert to numeric and drop rows with any NaNs
+        # Convert all features to numeric (coerce errors to NaN)
         X = X.apply(pd.to_numeric, errors='coerce')
-        combined = pd.concat([X, y], axis=1).dropna()
     
-        if combined.empty:
-            st.error("No data available after preprocessing. Possibly due to missing or non-numeric values.")
+        # Impute missing numeric values with median
+        imputer = SimpleImputer(strategy='median')
+        X_imputed = pd.DataFrame(imputer.fit_transform(X), columns=X.columns)
+    
+        # Combine imputed features with target
+        combined = pd.concat([X_imputed, y.reset_index(drop=True)], axis=1)
+    
+        # Check if data is empty after preprocessing
+        if combined.empty or combined.shape[0] == 0:
+            st.error("No data available after preprocessing. Please check the uploaded file or preprocessing steps.")
             st.stop()
     
         X = combined.drop(columns=['Test Results'])
