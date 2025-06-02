@@ -1,5 +1,7 @@
 # streamlit_medical_segmentation_app.py
-
+import requests
+from PIL import Image
+from io import BytesIO
 import streamlit as st
 import pandas as pd
 import seaborn as sns
