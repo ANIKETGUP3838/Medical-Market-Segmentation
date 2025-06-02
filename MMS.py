@@ -131,16 +131,20 @@ if uploaded_file:
     
         X = df_ml.drop(columns=['Test Results'])
         y = df_ml['Test Results']
-    
-        # Convert all features to numeric (coerce errors to NaN)
-        X = X.apply(pd.to_numeric, errors='coerce')
-    
-        # Impute missing numeric values with median
+        
+        # Convert to numeric with coercion
+        X_numeric = X.apply(pd.to_numeric, errors='coerce')
+        
+        # Impute missing numeric values
         imputer = SimpleImputer(strategy='median')
-        X_imputed = pd.DataFrame(imputer.fit_transform(X), columns=X.columns)
-    
-        # Combine imputed features with target
+        X_imputed_array = imputer.fit_transform(X_numeric)
+        
+        # Build DataFrame from imputed array
+        X_imputed = pd.DataFrame(X_imputed_array, columns=X_numeric.columns)
+        X_imputed.index = X.index  # keep original index
+        
         combined = pd.concat([X_imputed, y.reset_index(drop=True)], axis=1)
+
     
         # Check if data is empty after preprocessing
         if combined.empty or combined.shape[0] == 0:
