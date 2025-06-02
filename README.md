@@ -27,3 +27,17 @@ A Streamlit web application for interactive **Exploratory Data Analysis (EDA)**,
 - Highlights the best-performing model
 
 ---
+### 🗂 Sample Dataset Structure
+
+| Name           | Gender | Age | Billing Amount | Admission Type | Medical Condition | Test Results | Date of Admission | Discharge Date |
+|----------------|--------|-----|----------------|----------------|-------------------|--------------|-------------------|----------------|
+| John Doe       | Male   | 45  | 3200.50        | Emergency      | Hypertension      | Normal       | 2023-01-15        | 2023-01-18     |
+| Jane Smith     | Female | 60  | 4500.75        | Routine        | Diabetes          | Abnormal     | 2023-02-10        | 2023-02-14     |
+| Sam Williams   | Male   | 35  | 2800.00        | Emergency      | Asthma            | Inconclusive | 2023-03-05        | 2023-03-07     |
+| Lisa Johnson   | Female | 50  | 5200.25        | Urgent         | Heart Disease     | Normal       | 2023-04-12        | 2023-04-17     |
+| Robert King    | Male   | 70  | 6100.90        | Routine        | Stroke            | Abnormal     | 2023-05-01        | 2023-05-06     |
+| Emily Brown    | Female | 28  | 2500.00        | Emergency      | Allergy           | Normal       | 2023-06-20        | 2023-06-22     |
+| Michael Scott  | Male   | 55  | 4300.10        | Urgent         | Arthritis         | Inconclusive | 2023-07-15        | 2023-07-20     |
+| Angela White   | Female | 48  | 4700.80        | Routine        | Diabetes          | Abnormal     | 2023-08-10        | 2023-08-15     |
+| Daniel Green   | Male   | 33  | 3600.30        | Emergency      | Asthma            | Normal       | 2023-09-12        | 2023-09-14     |
+| Sophie Turner  | Female | 38  | 3100.00        | Urgent         | Hypertension      | Normal       | 2023-10-01        | 2023-10-05     |
