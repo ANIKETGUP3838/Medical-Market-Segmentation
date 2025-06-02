@@ -18,7 +18,7 @@ from sklearn.impute import SimpleImputer
 import numpy as np
 
 # Set up Streamlit layout
-st.set_page_config(page_title="Medical Segmentation Dashboard", layout="wide")
+st.title(page_title="Medical Segmentation Dashboard")
 
 @st.cache_data
 
