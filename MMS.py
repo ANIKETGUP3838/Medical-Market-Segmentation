@@ -126,22 +126,25 @@ if uploaded_file:
 
         X = df_ml.drop(columns=['Test Results'])
         y = df_ml['Test Results']
-
+        
         X = X.apply(pd.to_numeric, errors='coerce')
         combined = pd.concat([X, y], axis=1).dropna()
+        
         X = combined.drop(columns=['Test Results'])
         y = combined['Test Results']
+        
+        if X.empty or y.empty:
+            st.error("The dataset is empty after preprocessing. Please check the uploaded file or preprocessing steps.")
+            st.stop()
         
         st.write("Preprocessed features shape:", X.shape)
         st.write("Preprocessed target shape:", y.shape)
         
-        # Add this check here:
-        if X.empty or y.empty:
-            st.error("The dataset is empty after preprocessing. Please check the uploaded file or preprocessing steps.")
-            st.stop()  # Stop running further code if no data
-        
-        # Now safe to split
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        # 70% train, 30% test split
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.3, random_state=42
+        )
+
 
         models = {
             "Logistic Regression": LogisticRegression(max_iter=1000),
