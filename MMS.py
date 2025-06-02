@@ -1,56 +1,149 @@
-# medical_segmentation_app.py
+# streamlit_medical_segmentation_app.py
 
 import streamlit as st
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.decomposition import PCA
+import numpy as np
 
-# Page config
-st.set_page_config(page_title="Medical Segmentation EDA", layout="wide")
-st.title("🩺 Medical Market Segmentation: Age & Gender EDA")
+# Set up Streamlit multi-page layout
+st.set_page_config(page_title="Medical Segmentation Dashboard", layout="wide")
 
-# Upload dataset
-uploaded_file = st.file_uploader("Upload your healthcare_dataset.csv", type="csv")
-if uploaded_file is not None:
+@st.cache_data
+
+def load_data(uploaded_file):
     df = pd.read_csv(uploaded_file)
-
-    # Preprocess
     df['Gender'] = df['Gender'].str.strip().str.capitalize()
     age_bins = [10, 20, 30, 40, 50, 60, 70, 80, 90]
     age_labels = ['10–20', '20–30', '30–40', '40–50', '50–60', '60–70', '70–80', '80–90']
     df['Age Group'] = pd.cut(df['Age'], bins=age_bins, labels=age_labels, right=False)
+    return df
 
-    st.markdown("## 📊 Visual Explorations")
+# Sidebar Navigation
+st.sidebar.title("Navigation")
+page = st.sidebar.radio("Go to", ["EDA & Clustering", "ML Model Predictions"])
 
-    # 1. Age Group vs Gender Count
-    st.markdown("### 🔹 Patient Count by Age Group and Gender")
-    fig1, ax1 = plt.subplots(figsize=(10, 5))
-    sns.countplot(data=df, x='Age Group', hue='Gender', ax=ax1)
-    ax1.set_ylabel("Number of Patients")
-    ax1.set_xlabel("Age Group")
-    st.pyplot(fig1)
+# Upload file once for use across pages
+uploaded_file = st.sidebar.file_uploader("Upload your healthcare_dataset.csv", type="csv")
 
-    # 2. Billing by Age Group & Gender
-    st.markdown("### 🔹 Average Billing Amount by Age Group and Gender")
-    fig2, ax2 = plt.subplots(figsize=(10, 5))
-    sns.barplot(data=df, x='Age Group', y='Billing Amount', hue='Gender', ci='sd', ax=ax2)
-    ax2.set_ylabel("Average Billing")
-    ax2.set_xlabel("Age Group")
-    st.pyplot(fig2)
+if uploaded_file:
+    df = load_data(uploaded_file)
 
-    # 3. Admission Type by Gender
-    st.markdown("### 🔹 Admission Type Distribution by Gender")
-    fig3, ax3 = plt.subplots(figsize=(8, 5))
-    sns.countplot(data=df, x='Admission Type', hue='Gender', ax=ax3)
-    st.pyplot(fig3)
+    if page == "EDA & Clustering":
+        st.title("🩺 Medical Segmentation: EDA & Clustering")
+        st.sidebar.header("Filters")
+        selected_gender = st.sidebar.multiselect("Select Gender", options=df['Gender'].unique(), default=df['Gender'].unique())
+        selected_age = st.sidebar.slider("Select Age Range", int(df['Age'].min()), int(df['Age'].max()), (30, 70))
 
-    # 4. Top Conditions by Gender
-    st.markdown("### 🔹 Top Medical Conditions by Gender")
-    top_conditions = df['Medical Condition'].value_counts().nlargest(6).index
-    filtered_df = df[df['Medical Condition'].isin(top_conditions)]
-    fig4, ax4 = plt.subplots(figsize=(10, 5))
-    sns.countplot(data=filtered_df, y='Medical Condition', hue='Gender', ax=ax4)
-    st.pyplot(fig4)
+        df_filtered = df[(df['Gender'].isin(selected_gender)) & (df['Age'].between(*selected_age))]
 
+        st.subheader("1. Demographic & Billing Analysis")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Patient Count by Age Group and Gender**")
+            fig1, ax1 = plt.subplots()
+            sns.countplot(data=df_filtered, x='Age Group', hue='Gender', ax=ax1)
+            st.pyplot(fig1)
+        with col2:
+            st.markdown("**Average Billing by Age Group and Gender**")
+            fig2, ax2 = plt.subplots()
+            sns.barplot(data=df_filtered, x='Age Group', y='Billing Amount', hue='Gender', ci='sd', ax=ax2)
+            st.pyplot(fig2)
+
+        st.subheader("2. Admission Type & Conditions")
+        col3, col4 = st.columns(2)
+        with col3:
+            st.markdown("**Admission Type by Gender**")
+            fig3, ax3 = plt.subplots()
+            sns.countplot(data=df_filtered, x='Admission Type', hue='Gender', ax=ax3)
+            st.pyplot(fig3)
+        with col4:
+            st.markdown("**Top Medical Conditions by Gender**")
+            top_conditions = df_filtered['Medical Condition'].value_counts().nlargest(6).index
+            condition_df = df_filtered[df_filtered['Medical Condition'].isin(top_conditions)]
+            fig4, ax4 = plt.subplots()
+            sns.countplot(data=condition_df, y='Medical Condition', hue='Gender', ax=ax4)
+            st.pyplot(fig4)
+
+        st.subheader("3. Unsupervised Segmentation (Clustering)")
+        clustering_features = ['Age', 'Billing Amount']
+        st.markdown("**PCA + KMeans Clustering using Age and Billing Amount**")
+        k = st.slider("Number of clusters (K)", 2, 10, 4)
+
+        X = df_filtered[clustering_features].copy()
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        pca = PCA(n_components=2)
+        X_pca = pca.fit_transform(X_scaled)
+
+        from sklearn.cluster import KMeans
+        kmeans = KMeans(n_clusters=k, random_state=42)
+        clusters = kmeans.fit_predict(X_pca)
+        df_filtered['Cluster'] = clusters
+        pca_df = pd.DataFrame(X_pca, columns=['PCA1', 'PCA2'])
+        pca_df['Cluster'] = clusters
+
+        fig5, ax5 = plt.subplots()
+        sns.scatterplot(data=pca_df, x='PCA1', y='PCA2', hue='Cluster', palette='tab10', ax=ax5)
+        ax5.set_title("Patient Clusters Based on Age & Billing")
+        st.pyplot(fig5)
+
+        st.subheader("4. Cluster Profiles")
+        cluster_summary = df_filtered.groupby('Cluster')[['Age', 'Billing Amount']].mean().round(1)
+        cluster_summary['Count'] = df_filtered['Cluster'].value_counts()
+        st.dataframe(cluster_summary)
+
+    elif page == "ML Model Predictions":
+        st.title("🧠 ML Model Predictions: Test Results Classification")
+        st.markdown("This page builds and evaluates classification models to predict **Test Results**.")
+
+        df_ml = df.copy()
+        df_ml['Test Results'] = df_ml['Test Results'].replace({'Normal': 1, 'Inconclusive': 0, 'Abnormal': 2})
+        df_ml.drop(columns=['Name', 'Date of Admission', 'Discharge Date'], errors='ignore', inplace=True)
+
+        for col in df_ml.select_dtypes(include='object').columns:
+            le = LabelEncoder()
+            df_ml[col] = le.fit_transform(df_ml[col].astype(str))
+
+        X = df_ml.drop(columns=['Test Results'])
+        y = df_ml['Test Results']
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        models = {
+            "Logistic Regression": LogisticRegression(),
+            "KNN": KNeighborsClassifier(),
+            "Decision Tree": DecisionTreeClassifier(),
+            "Random Forest": RandomForestClassifier()
+        }
+
+        results = {}
+        for name, model in models.items():
+            model.fit(X_train, y_train)
+            preds = model.predict(X_test)
+            acc = accuracy_score(y_test, preds)
+            cm = confusion_matrix(y_test, preds)
+            results[name] = acc
+
+            st.markdown(f"**{name}** - Accuracy: {acc:.3f}")
+            fig_cm, ax_cm = plt.subplots()
+            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax_cm,
+                        xticklabels=['Abnormal', 'Inconclusive', 'Normal'],
+                        yticklabels=['Abnormal', 'Inconclusive', 'Normal'])
+            ax_cm.set_xlabel("Predicted")
+            ax_cm.set_ylabel("Actual")
+            st.pyplot(fig_cm)
+
+        best_model = max(results, key=results.get)
+        st.success(f"Best performing model: {best_model} with accuracy {results[best_model]:.3f}")
 else:
-    st.info("Please upload a CSV file to begin analysis.")
+    st.info("Please upload a CSV file to get started.")
