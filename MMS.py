@@ -132,6 +132,9 @@ if uploaded_file:
         X = combined.drop(columns=['Test Results'])
         y = combined['Test Results']
         
+        st.write("Preprocessed features shape:", X.shape)
+        st.write("Preprocessed target shape:", y.shape)
+        
         # Add this check here:
         if X.empty or y.empty:
             st.error("The dataset is empty after preprocessing. Please check the uploaded file or preprocessing steps.")
