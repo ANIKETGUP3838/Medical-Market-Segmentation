@@ -45,6 +45,14 @@ if uploaded_file:
         st.title("🩺 Medical Segmentation: EDA & Clustering")
         st.sidebar.header("Filters")
 
+        image_url = "https://raw.githubusercontent.com/ANIKETGUP3838/Medical-Market-Segmentation/main/h1.jpg"
+        response = requests.get(image_url)
+        image = Image.open(BytesIO(response.content))
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.image(image, width=750)
+
         selected_gender = st.sidebar.multiselect("Select Gender", options=df['Gender'].dropna().unique(), default=df['Gender'].dropna().unique())
         selected_age = st.sidebar.slider("Select Age Range", int(df['Age'].min()), int(df['Age'].max()), (30, 70))
 
